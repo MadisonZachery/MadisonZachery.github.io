@@ -1,44 +1,80 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sweet Notes — A girly blog</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Customizer</title>
 <style>
-:root{
---bg: #fff8fb;
---card: #ffffff;
---muted: #8a7085;
---accent-1: #ffd1e6; /* cotton candy */
---accent-2: #ffe9f2; /* whisper */
---accent-3: #ffb3d1; /* rose */
---primary: #ff6fb1; /* bubblegum */
---glass: rgba(255,255,255,0.6);
---shadow: 0 6px 24px rgba(137, 91, 123, 0.12);
---radius: 18px;
+  body { font-family: 'Press Start 2P', cursive; background:#fff0f5; text-align:center;}
+  nav { background:#ffb6c1; display:flex; justify-content:center; padding:10px 0; }
+  nav a { color:white; text-decoration:none; margin:0 15px; }
+  nav a:hover { color:#ffe4e1; }
+
+  canvas { border:2px solid #ff69b4; margin-top:20px; image-rendering: pixelated; }
+  .controls { margin-top:10px; }
+  .controls button { margin:5px; padding:5px 10px; background:#ffb6c1; border:none; color:white; font-weight:bold; cursor:pointer; }
+  .controls button:hover { background:#ff69b4; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Home</a>
+  <a href="about.html">About Me</a>
+  <a href="blog.html">Blog</a>
+  <a href="customizer.html">Character Customizer</a>
+</nav>
+
+<h2>Create Your Pixel Character!</h2>
+<canvas id="pixelCanvas" width="120" height="120"></canvas>
+<div class="controls">
+  <button onclick="changeColor('hair')">Change Hair</button>
+  <button onclick="changeColor('outfit')">Change Outfit</button>
+  <button onclick="resetCharacter()">Reset</button>
+</div>
+
+<script>
+const canvas = document.getElementById('pixelCanvas');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+let character = {
+  hair: '#ff69b4',
+  outfit: '#ffb6c1'
+};
+
+function drawCharacter() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // hair (top 3 rows)
+  ctx.fillStyle = character.hair;
+  ctx.fillRect(20,0,80,30);
+  // outfit (middle 6 rows)
+  ctx.fillStyle = character.outfit;
+  ctx.fillRect(30,30,60,60);
+  // face
+  ctx.fillStyle='#ffe0bd';
+  ctx.fillRect(40,30,40,40);
+  // eyes
+  ctx.fillStyle='black';
+  ctx.fillRect(45,40,5,5);
+  ctx.fillRect(70,40,5,5);
+  // smile
+  ctx.fillStyle='red';
+  ctx.fillRect(55,65,10,3);
 }
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-margin:0; background: linear-gradient(180deg,var(--accent-2),var(--bg));
-color:#3b2b33; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-padding:36px; -webkit-tap-highlight-color: transparent;
+drawCharacter();
+
+function changeColor(part){
+  const colors = ['#ff69b4','#ffb6c1','#ffd700','#00ffff','#ff7f50'];
+  character[part] = colors[Math.floor(Math.random()*colors.length)];
+  drawCharacter();
 }
 
+function resetCharacter(){
+  character = {hair:'#ff69b4', outfit:'#ffb6c1'};
+  drawCharacter();
+}
+</script>
 
-/* container */
-.container{max-width:1100px; margin:0 auto; display:grid; grid-template-columns: 1fr 320px; gap:28px; align-items:start}
-
-
-header{display:flex; gap:18px; align-items:center; margin-bottom:20px}
-.logo{display:flex; gap:12px; align-items:center}
-.logo .mark{width:64px; height:64px; border-radius:16px; background:linear-gradient(135deg,var(--accent-1),var(--accent-3)); box-shadow: var(--shadow); display:flex; align-items:center; justify-content:center}
-.logo .mark span{font-family:'Pacifico'; font-size:28px; color:white}
-.site-title{line-height:1}
-.site-title h1{margin:0; font-size:20px; letter-spacing:0.2px}
+</body>
 </html>
-  
