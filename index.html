@@ -1,79 +1,512 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Character Customizer</title>
-<style>
-  body { font-family: 'Press Start 2P', cursive; background:#fff0f5; text-align:center;}
-  nav { background:#ffb6c1; display:flex; justify-content:center; padding:10px 0; }
-  nav a { color:white; text-decoration:none; margin:0 15px; }
-  nav a:hover { color:#ffe4e1; }
-
-  canvas { border:2px solid #ff69b4; margin-top:20px; image-rendering: pixelated; }
-  .controls { margin-top:10px; }
-  .controls button { margin:5px; padding:5px 10px; background:#ffb6c1; border:none; color:white; font-weight:bold; cursor:pointer; }
-  .controls button:hover { background:#ff69b4; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Promise Power Predictor (Futures Game)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark background for tech/finance feel */
+            color: #e6e6e6;
+        }
+        .game-panel {
+            background: #161b22; /* Slightly lighter panel */
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #30363d;
+        }
+        .terminal-header {
+            background: #23282f;
+            color: #c9d1d9;
+            padding: 8px 16px;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        .chart-container {
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            background: #0d1117;
+            padding: 4px;
+        }
+        .buy-btn { background-color: #238636; } /* Green */
+        .sell-btn { background-color: #da3633; } /* Red */
+        .action-btn {
+            padding: 12px 24px;
+            font-weight: 800;
+            transition: all 0.1s;
+        }
+        .action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .action-btn:disabled {
+            background-color: #586069;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .tip-box {
+            background: #23282f;
+            border-left: 4px solid #58a6ff;
+            color: #c9d1d9;
+        }
+        .pnl-positive { color: #238636; font-weight: 800; }
+        .pnl-negative { color: #da3633; font-weight: 800; }
+        .pnl-zero { color: #c9d1d9; }
+    </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-<nav>
-  <a href="index.html">Home</a>
-  <a href="about.html">About Me</a>
-  <a href="blog.html">Blog</a>
-  <a href="customizer.html">Character Customizer</a>
-</nav>
+<div id="game-container" class="max-w-6xl mx-auto space-y-6">
 
-<h2>Create Your Pixel Character!</h2>
-<canvas id="pixelCanvas" width="120" height="120"></canvas>
-<div class="controls">
-  <button onclick="changeColor('hair')">Change Hair</button>
-  <button onclick="changeColor('outfit')">Change Outfit</button>
-  <button onclick="resetCharacter()">Reset</button>
+    <header class="text-center">
+        <h1 class="text-4xl font-extrabold text-[#58a6ff]">The Promise Power Predictor</h1>
+        <p class="text-xl text-gray-400 mt-1">A Futures Trading Simulator for Super Smart Fifth Graders</p>
+    </header>
+
+    <!-- Game Stats and Controls -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Account Panel -->
+        <div class="game-panel p-6 lg:col-span-1">
+            <h2 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-wallet mr-3 text-[#58a6ff]"></i> Your Bank Account</h2>
+            <div class="space-y-2">
+                <div class="flex justify-between text-xl">
+                    <span>Balance:</span>
+                    <span id="account-balance" class="font-mono text-white">$5,000.00</span>
+                </div>
+                <div class="flex justify-between text-xl">
+                    <span>Margin Used:</span>
+                    <span id="margin-used" class="font-mono text-red-400">$0.00</span>
+                </div>
+                <div class="flex justify-between text-xl pt-2 border-t border-gray-700">
+                    <span>Available Cash:</span>
+                    <span id="available-cash" class="font-mono text-white font-bold">$5,000.00</span>
+                </div>
+            </div>
+            <div id="liquidation-warning" class="mt-4 text-sm p-3 bg-red-700/50 rounded-lg hidden">
+                <i class="fas fa-exclamation-triangle mr-2"></i> Warning! You are close to a Margin Call!
+            </div>
+        </div>
+
+        <!-- Position and P&L Panel -->
+        <div class="game-panel p-6 lg:col-span-2">
+            <h2 class="text-2xl font-bold mb-4 flex items-center"><i class="fas fa-chart-line mr-3 text-green-400"></i> Your Current Promise (Position)</h2>
+            <div class="grid grid-cols-2 gap-4 text-lg">
+                <div class="space-y-2">
+                    <p><strong>Direction:</strong> <span id="position-type" class="text-yellow-400">None</span></p>
+                    <p><strong>Entry Price:</strong> <span id="entry-price">--</span></p>
+                    <p><strong>Market Price:</strong> <span id="market-price" class="font-mono text-2xl font-bold text-white">5000.00</span></p>
+                </div>
+                <div class="space-y-2">
+                    <p><strong>Contracts:</strong> <span id="contracts-held">0</span></p>
+                    <p><strong>Unrealized P&L:</strong> <span id="unrealized-pnl" class="pnl-zero text-2xl">--</span></p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-6 flex space-x-4">
+                <button id="buy-btn" class="buy-btn action-btn flex-1 rounded-lg">Buy (Go Long) ⬆️</button>
+                <button id="sell-btn" class="sell-btn action-btn flex-1 rounded-lg">Sell (Go Short) ⬇️</button>
+                <button id="close-btn" class="bg-gray-600 action-btn flex-1 rounded-lg" disabled>Close Promise 🛑</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart and Tutorial/Tips -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Market Chart -->
+        <div class="game-panel lg:col-span-2 p-4">
+            <div class="terminal-header"><i class="fas fa-desktop mr-2"></i> Market Trend View (Our "Index" Future)</div>
+            <div class="chart-container mt-2">
+                <canvas id="priceChart" width="800" height="400" class="w-full"></canvas>
+            </div>
+        </div>
+
+        <!-- Tutorial and Tips Panel -->
+        <div class="game-panel lg:col-span-1 p-4">
+            <div class="terminal-header"><i class="fas fa-lightbulb mr-2"></i> Professor Pixel's Futures Tips</div>
+            <div id="tutorial-content" class="p-4 space-y-4">
+                <h3 class="text-xl font-bold text-[#58a6ff]">Welcome, Future Trader!</h3>
+                <p>Let's learn about Futures. They're like a promise you make today about what something will cost later!</p>
+                <button id="start-tutorial-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg w-full transition">Start the Lesson!</button>
+            </div>
+            <div id="tip-display" class="tip-box p-4 mt-4 hidden">
+                <p class="font-semibold text-lg mb-2 flex items-center"><i class="fas fa-comments mr-2"></i> Tip Time!</p>
+                <p id="current-tip-text"></p>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<script>
-const canvas = document.getElementById('pixelCanvas');
-const ctx = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = false;
+<script type="module">
+    // --- Configuration (The Rules of the Game) ---
+    const CONFIG = {
+        STARTING_BALANCE: 5000.00,
+        INITIAL_PRICE: 5000.00,
+        MARGIN_PER_CONTRACT: 500.00,
+        TICK_SIZE: 0.25, // Minimum price change
+        TICK_VALUE: 12.50, // $ amount per tick (0.25 point move * $50/point = $12.50)
+        CHART_LENGTH: 50,
+        TUTORIAL_STEPS: [
+            { title: "What are Futures? The Promise!", text: "Imagine you're a farmer selling corn. You want to make sure you get a good price in the Fall. A futures contract is like a signed promise to sell your corn in October for a price you agree on TODAY. It helps you avoid surprises! We are trading a contract based on the 'Super Index' (like a basket of big company stocks).", delay: 8000 },
+            { title: "Long vs. Short: Making a Bet", text: "When you click 'Buy' (Go Long), you make a promise to *buy* at the agreed price, hoping the price goes UP. If the price goes up, you make money. When you click 'Sell' (Go Short), you make a promise to *sell*, hoping the price goes DOWN. If the price goes down, you make money. The first button you click opens your promise!", delay: 10000 },
+            { title: "The Safety Deposit: Margin", text: "You don't pay the full value of the contract ($5000!) upfront. You just put down a small Safety Deposit, called 'Margin' ($500). This lets you control a big promise with a little bit of cash. This is called 'Leverage,' and it can make profits or losses happen very quickly!", delay: 10000 },
+            { title: "Ticks: The Little Changes", text: "In our game, the smallest price change is 0.25 points. We call this a 'tick.' Every time the price moves one tick, you gain or lose $12.50. This is how the money is counted in a futures market!", delay: 8000 },
+            { title: "Tip: Risk Control is Key!", text: "Because of that big 'Leverage' power, you must watch your balance closely. If you lose too much money, the game will warn you and then close your promise to protect your balance! This is called a 'Margin Call' in the real world. Only risk a small part of your account!", delay: 12000 },
+            { title: "Ready to Play!", text: "You have $5,000. Try to grow it! Use the news event below to guess if the price will go up (Buy) or down (Sell). Good luck, Professor Pixel is rooting for you!", delay: 10000 }
+        ],
+        NEWS_EVENTS: [
+            { text: "Big companies report huge profits! Confidence is high in the Super Index.", bias: 0.05 },
+            { text: "New weather forecast says it will rain all week, slowing down construction projects.", bias: -0.05 },
+            { text: "The government announced plans to spend a lot of money on new parks and roads. People are excited!", bias: 0.08 },
+            { text: "A major bank had a computer glitch, making some investors nervous and causing a small panic.", bias: -0.10 },
+            { text: "Everything is quiet today. The market is just bouncing around waiting for the next big story.", bias: 0.00 }
+        ]
+    };
 
-let character = {
-  hair: '#ff69b4',
-  outfit: '#ffb6c1'
-};
+    // --- Game State ---
+    let state = {
+        balance: CONFIG.STARTING_BALANCE,
+        price: CONFIG.INITIAL_PRICE,
+        position: {
+            active: false,
+            type: null, // 'long' or 'short'
+            contracts: 0,
+            entryPrice: 0,
+            initialMargin: 0,
+        },
+        chartData: Array(CONFIG.CHART_LENGTH).fill(CONFIG.INITIAL_PRICE),
+        newsEvent: CONFIG.NEWS_EVENTS[0],
+        gameRunning: true,
+        simulationInterval: null,
+        tutorialStep: 0,
+    };
 
-function drawCharacter() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // hair (top 3 rows)
-  ctx.fillStyle = character.hair;
-  ctx.fillRect(20,0,80,30);
-  // outfit (middle 6 rows)
-  ctx.fillStyle = character.outfit;
-  ctx.fillRect(30,30,60,60);
-  // face
-  ctx.fillStyle='#ffe0bd';
-  ctx.fillRect(40,30,40,40);
-  // eyes
-  ctx.fillStyle='black';
-  ctx.fillRect(45,40,5,5);
-  ctx.fillRect(70,40,5,5);
-  // smile
-  ctx.fillStyle='red';
-  ctx.fillRect(55,65,10,3);
-}
-drawCharacter();
+    // --- DOM Elements ---
+    const elements = {
+        accountBalance: document.getElementById('account-balance'),
+        marginUsed: document.getElementById('margin-used'),
+        availableCash: document.getElementById('available-cash'),
+        positionType: document.getElementById('position-type'),
+        entryPrice: document.getElementById('entry-price'),
+        marketPrice: document.getElementById('market-price'),
+        contractsHeld: document.getElementById('contracts-held'),
+        unrealizedPNL: document.getElementById('unrealized-pnl'),
+        buyBtn: document.getElementById('buy-btn'),
+        sellBtn: document.getElementById('sell-btn'),
+        closeBtn: document.getElementById('close-btn'),
+        tutorialContent: document.getElementById('tutorial-content'),
+        startTutorialBtn: document.getElementById('start-tutorial-btn'),
+        tipDisplay: document.getElementById('tip-display'),
+        currentTipText: document.getElementById('current-tip-text'),
+        liquidationWarning: document.getElementById('liquidation-warning'),
+        chartCanvas: document.getElementById('priceChart'),
+        ctx: document.getElementById('priceChart').getContext('2d'),
+    };
 
-function changeColor(part){
-  const colors = ['#ff69b4','#ffb6c1','#ffd700','#00ffff','#ff7f50'];
-  character[part] = colors[Math.floor(Math.random()*colors.length)];
-  drawCharacter();
-}
+    // --- Formatting Helpers ---
+    const formatCurrency = (amount) => `$${amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+    const formatPrice = (price) => price.toFixed(2);
 
-function resetCharacter(){
-  character = {hair:'#ff69b4', outfit:'#ffb6c1'};
-  drawCharacter();
-}
+    // --- P&L Calculation ---
+    function calculatePNL() {
+        if (!state.position.active) return 0;
+
+        const { entryPrice, type, contracts } = state.position;
+        const priceDifference = state.price - entryPrice;
+        const tickDifference = priceDifference / CONFIG.TICK_SIZE;
+        let pnl = tickDifference * CONFIG.TICK_VALUE * contracts;
+
+        // Invert P&L for short positions
+        if (type === 'short') {
+            pnl = -pnl;
+        }
+        return pnl;
+    }
+
+    // --- UI Update Functions ---
+    function updateUI() {
+        const pnl = calculatePNL();
+        const availableCash = state.balance - state.position.initialMargin;
+        const liquidationThreshold = state.position.initialMargin * 0.5; // Example: liquidation if P&L wipes out 50% of margin
+
+        // 1. Account Stats
+        elements.accountBalance.textContent = formatCurrency(state.balance);
+        elements.marginUsed.textContent = formatCurrency(state.position.initialMargin);
+        elements.availableCash.textContent = formatCurrency(availableCash);
+
+        // 2. Position/Market
+        elements.marketPrice.textContent = formatPrice(state.price);
+        elements.positionType.textContent = state.position.type ? (state.position.type === 'long' ? 'LONG (Buying Promise)' : 'SHORT (Selling Promise)') : 'None';
+        elements.positionType.className = state.position.type === 'long' ? 'text-green-400' : (state.position.type === 'short' ? 'text-red-400' : 'text-yellow-400');
+        elements.entryPrice.textContent = state.position.active ? formatPrice(state.position.entryPrice) : '--';
+        elements.contractsHeld.textContent = state.position.active ? state.position.contracts : 0;
+
+        // 3. P&L Display
+        elements.unrealizedPNL.textContent = state.position.active ? formatCurrency(pnl) : '--';
+        elements.unrealizedPNL.className = pnl > 0 ? 'pnl-positive text-2xl' : (pnl < 0 ? 'pnl-negative text-2xl' : 'pnl-zero text-2xl');
+
+        // 4. Button State
+        elements.buyBtn.disabled = elements.sellBtn.disabled = state.position.active;
+        elements.closeBtn.disabled = !state.position.active;
+
+        // 5. Margin Warning
+        if (state.position.active && pnl < -liquidationThreshold) {
+            elements.liquidationWarning.classList.remove('hidden');
+        } else {
+            elements.liquidationWarning.classList.add('hidden');
+        }
+
+        // 6. Check for Game Over (Margin Call)
+        if (state.position.active && state.balance + pnl < state.position.initialMargin) {
+            triggerMarginCall();
+        }
+    }
+
+    // --- Chart Drawing ---
+    function drawChart() {
+        const { ctx, chartCanvas } = elements;
+        const width = chartCanvas.width;
+        const height = chartCanvas.height;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#0d1117';
+        ctx.fillRect(0, 0, width, height);
+
+        // Define bounds and scales
+        const data = state.chartData;
+        const minVal = Math.min(...data);
+        const maxVal = Math.max(...data);
+        const range = maxVal - minVal;
+        const yMargin = range * 0.1 || 1; // Add 10% padding
+        const minY = minVal - yMargin;
+        const maxY = maxVal + yMargin;
+
+        const xStep = width / (data.length - 1);
+
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#58a6ff'; // Blue line color
+
+        // Draw line
+        data.forEach((value, index) => {
+            const x = index * xStep;
+            const y = height - ((value - minY) / (maxY - minY)) * height;
+
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        ctx.stroke();
+
+        // Draw last price dot (current price)
+        const lastX = (data.length - 1) * xStep;
+        const lastY = height - ((data[data.length - 1] - minY) / (maxY - minY)) * height;
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 5, 0, Math.PI * 2, true);
+        ctx.fillStyle = state.position.type === 'long' ? '#238636' : (state.position.type === 'short' ? '#da3633' : '#e6e6e6');
+        ctx.fill();
+    }
+
+    // --- Game Logic ---
+
+    function startTutorial() {
+        elements.startTutorialBtn.classList.add('hidden');
+        elements.tipDisplay.classList.remove('hidden');
+        runTutorialStep(0);
+    }
+
+    function runTutorialStep(stepIndex) {
+        if (stepIndex >= CONFIG.TUTORIAL_STEPS.length) {
+            // Tutorial finished
+            elements.currentTipText.textContent = "Great job finishing the lesson! You are ready to make your first Promise (trade). Look at the 'News Event' below to help you decide which way the price will go!";
+            elements.tutorialContent.innerHTML = `<h3 class="text-xl font-bold text-gray-300">Current News Event:</h3><p class="text-yellow-300 font-semibold text-lg mt-2">${state.newsEvent.text}</p><p class="mt-4 text-sm text-gray-400">This news will affect the market's randomness until you close your trade.</p>`;
+            return;
+        }
+
+        const step = CONFIG.TUTORIAL_STEPS[stepIndex];
+        elements.currentTipText.innerHTML = `<strong>${step.title}</strong>: ${step.text}`;
+
+        // Set up the next step
+        setTimeout(() => {
+            runTutorialStep(stepIndex + 1);
+        }, step.delay);
+    }
+
+    function marketSimulationStep() {
+        if (!state.gameRunning) return;
+
+        // Random price movement
+        let change = (Math.random() - 0.5) * CONFIG.TICK_SIZE * 2;
+
+        // Apply news bias if no position is active (to generate better opportunities)
+        if (!state.position.active) {
+             change += state.newsEvent.bias * CONFIG.TICK_SIZE * 10;
+        } else {
+             // Apply news bias to current price movement (slower, continuous influence)
+            change += state.newsEvent.bias * CONFIG.TICK_SIZE * 2;
+        }
+
+        // Snap the price change to the nearest tick size
+        change = Math.round(change / CONFIG.TICK_SIZE) * CONFIG.TICK_SIZE;
+        let newPrice = state.price + change;
+
+        // Ensure price doesn't go negative (since it's an index)
+        if (newPrice < 100) newPrice = 100;
+
+        state.price = newPrice;
+
+        // Update chart data
+        state.chartData.push(state.price);
+        if (state.chartData.length > CONFIG.CHART_LENGTH) {
+            state.chartData.shift();
+        }
+
+        updateUI();
+        drawChart();
+    }
+
+    function openPosition(type) {
+        if (state.position.active) return;
+
+        const contracts = 1; // Start simple with 1 contract
+        const marginRequired = contracts * CONFIG.MARGIN_PER_CONTRACT;
+
+        if (state.balance < marginRequired) {
+            showTemporaryTip("Uh oh! You need at least " + formatCurrency(marginRequired) + " cash to open a promise! You don't have enough margin.", 5000, 'red');
+            return;
+        }
+
+        // Apply a new news event to provide a fresh opportunity/challenge
+        const randomIndex = Math.floor(Math.random() * CONFIG.NEWS_EVENTS.length);
+        state.newsEvent = CONFIG.NEWS_EVENTS[randomIndex];
+        elements.tutorialContent.innerHTML = `<h3 class="text-xl font-bold text-gray-300">Current News Event:</h3><p class="text-yellow-300 font-semibold text-lg mt-2">${state.newsEvent.text}</p><p class="mt-4 text-sm text-gray-400">This news will affect the market's randomness until you close your trade.</p>`;
+
+
+        state.position = {
+            active: true,
+            type: type,
+            contracts: contracts,
+            entryPrice: state.price,
+            initialMargin: marginRequired,
+        };
+        showTemporaryTip(`You opened a **${type.toUpperCase()}** promise at ${formatPrice(state.price)}! You put down your Safety Deposit (${formatCurrency(marginRequired)}). Let's see if you were right!`, 6000, type === 'long' ? 'green' : 'red');
+        updateUI();
+    }
+
+    function closePosition() {
+        if (!state.position.active) return;
+
+        const pnl = calculatePNL();
+        state.balance += pnl;
+
+        showTemporaryTip(`You closed your promise! Your Profit/Loss (P&L) was ${formatCurrency(pnl)}. Your new balance is ${formatCurrency(state.balance)}. Time to look for the next promise!`, 8000, pnl > 0 ? 'green' : (pnl < 0 ? 'red' : 'blue'));
+
+        // Reset position
+        state.position = {
+            active: false,
+            type: null,
+            contracts: 0,
+            entryPrice: 0,
+            initialMargin: 0,
+        };
+
+        // If balance is too low after trade, warn the player
+        if (state.balance < CONFIG.MARGIN_PER_CONTRACT) {
+            clearInterval(state.simulationInterval);
+            state.gameRunning = false;
+            showFinalMessage(`Game Over! You ran out of cash. You need at least ${formatCurrency(CONFIG.MARGIN_PER_CONTRACT)} to play. Your final balance: ${formatCurrency(state.balance)}. Refresh to try again!`);
+            return;
+        }
+
+        // Reset chart data to current price
+        state.chartData = Array(CONFIG.CHART_LENGTH).fill(state.price);
+
+        // Generate a new, random news event for the next trade
+        const randomIndex = Math.floor(Math.random() * CONFIG.NEWS_EVENTS.length);
+        state.newsEvent = CONFIG.NEWS_EVENTS[randomIndex];
+        elements.tutorialContent.innerHTML = `<h3 class="text-xl font-bold text-gray-300">Current News Event:</h3><p class="text-yellow-300 font-semibold text-lg mt-2">${state.newsEvent.text}</p><p class="mt-4 text-sm text-gray-400">Try to predict the market's movement and make a new promise!</p>`;
+
+        updateUI();
+    }
+
+    function triggerMarginCall() {
+        const pnl = calculatePNL();
+        state.balance += pnl;
+
+        showFinalMessage(`🛑 Margin Call! You lost too much and your promise was closed automatically to protect the rest of your money. P&L: ${formatCurrency(pnl)}. Final Balance: ${formatCurrency(state.balance)}. You need at least ${formatCurrency(CONFIG.MARGIN_PER_CONTRACT)} to open a new promise. Refresh to restart!`);
+
+        // Stop the game
+        clearInterval(state.simulationInterval);
+        state.gameRunning = false;
+
+        // Reset position (but not the balance)
+        state.position = { active: false, type: null, contracts: 0, entryPrice: 0, initialMargin: 0 };
+        updateUI();
+    }
+
+    function showTemporaryTip(message, duration, color) {
+        const tipElement = document.createElement('div');
+        tipElement.className = `p-4 mt-4 rounded-lg text-white font-semibold shadow-lg transition-opacity duration-500 opacity-0`;
+        
+        let bgColor;
+        if (color === 'green') bgColor = 'bg-green-700';
+        else if (color === 'red') bgColor = 'bg-red-700';
+        else bgColor = 'bg-blue-700';
+
+        tipElement.classList.add(bgColor);
+        tipElement.innerHTML = `<i class="fas fa-magic mr-2"></i> ${message}`;
+
+        // Insert above the tutorial panel content
+        elements.tutorialContent.insertAdjacentElement('beforebegin', tipElement);
+
+        setTimeout(() => tipElement.classList.add('opacity-100'), 50);
+
+        setTimeout(() => {
+            tipElement.classList.remove('opacity-100');
+            setTimeout(() => tipElement.remove(), 500);
+        }, duration);
+    }
+
+    function showFinalMessage(message) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50';
+        modal.innerHTML = `
+            <div class="bg-[#161b22] p-10 rounded-xl max-w-lg w-full text-center shadow-2xl border-2 border-red-500">
+                <h2 class="text-4xl font-extrabold text-red-400 mb-4"><i class="fas fa-skull-crossbones mr-2"></i> GAME OVER</h2>
+                <p class="text-xl text-white mb-6">${message}</p>
+                <button onclick="window.location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition">Restart Simulator</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    // --- Initialization ---
+    window.onload = function() {
+        // Set up event listeners
+        elements.startTutorialBtn.addEventListener('click', startTutorial);
+        elements.buyBtn.addEventListener('click', () => openPosition('long'));
+        elements.sellBtn.addEventListener('click', () => openPosition('short'));
+        elements.closeBtn.addEventListener('click', closePosition);
+
+        // Initial render
+        updateUI();
+        drawChart();
+
+        // Start the market simulation loop
+        state.simulationInterval = setInterval(marketSimulationStep, 1000);
+    };
 </script>
 
 </body>
